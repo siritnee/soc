@@ -1,0 +1,2 @@
+{"timestamp_utc":"2026-11-12T09:00:00+07:00","source_type":"auth_log","src_ip":"192.0.2.10","dst_ip":"192.0.2.20","username":"demo","hostname":"lab-host","action":"ssh_failed","severity":"medium","raw":{"synthetic":true,"line":"Failed password for demo"}}
+{"timestamp_utc":"2026-11-12T09:00:01+07:00","source_type":"suricata","src_ip":"192.0.2.10","dst_ip":"192.0.2.20","username":null,"hostname":"lab-host","action":"alert","severity":"high","dst_port":22,"signature":"Example test alert","raw":{"synthetic":true}}
