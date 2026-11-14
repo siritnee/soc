@@ -1,0 +1,22 @@
+Nov 12 08:00:12 bastion-01 sshd[2101]: Accepted publickey for alice from 10.0.2.21 port 50122 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 12 08:00:12 bastion-01 sshd[2101]: pam_unix(sshd:session): session opened for user alice(uid=1001) by (uid=0)
+Nov 12 08:00:12 bastion-01 systemd-logind[612]: New session 12 of user alice.
+Nov 12 08:05:44 bastion-01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/systemctl status nginx
+Nov 12 08:05:44 bastion-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by alice(uid=1001)
+Nov 12 08:06:10 bastion-01 sudo:      bob : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/bob ; USER=root ; COMMAND=/usr/bin/su -
+Nov 12 08:07:30 bastion-01 sudo:  mallory : user NOT in sudoers ; TTY=pts/2 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/bash
+Nov 12 08:17:01 bastion-01 CRON[2300]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 12 08:40:01 bastion-01 sshd[3001]: Invalid user admin from 203.0.113.50 port 40112
+Nov 12 08:40:03 bastion-01 sshd[3001]: Failed password for invalid user admin from 203.0.113.50 port 40112 ssh2
+Nov 12 08:40:05 bastion-01 sshd[3002]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.50  user=root
+Nov 12 08:40:06 bastion-01 sshd[3002]: Failed password for root from 203.0.113.50 port 40118 ssh2
+Nov 12 08:40:09 bastion-01 sshd[3002]: message repeated 2 times: [ Failed password for root from 203.0.113.50 port 40118 ssh2]
+Nov 12 08:40:10 bastion-01 sshd[3002]: error: maximum authentication attempts exceeded for root from 203.0.113.50 port 40118 ssh2 [preauth]
+Nov 12 08:40:12 bastion-01 sshd[3003]: Failed password for deploy from 203.0.113.50 port 40124 ssh2
+Nov 12 08:40:15 bastion-01 sshd[3003]: Accepted password for deploy from 203.0.113.50 port 40124 ssh2
+Nov 12 09:10:22 web-01 sshd[4100]: Failed password for alice from 198.51.100.23 port 51000 ssh2
+Nov 12 09:10:25 web-01 sshd[4100]: pam_faillock(sshd:auth): Consecutive login failures for user alice account temporarily locked
+this line is not syslog at all
+Nov 31 09:11:00 web-01 sshd[4101]: Failed password for alice from 198.51.100.23 port 51001 ssh2
+2026-11-12T09:12:00.500000+07:00 web-01 sshd[4102]: Failed password for carol from 10.0.2.23 port 51002 ssh2
+Nov 12 09:13:00 web-01 sshd[4103]: Failed password for dave from client.lab.example port 51003 ssh2
