@@ -1,0 +1,19 @@
+{
+  "name": "soc-holdout-bruteforce",
+  "description": "SSH log kept aside for practising the defence. Not used when rules are tuned.",
+  "seed": 7771,
+  "built_with": "python -m datagen.benchmark --out data/benchmark --holdout data/holdout",
+  "start_utc": "2026-11-20T07:00:00.000000Z",
+  "end_utc": "2026-11-20T07:45:00.000000Z",
+  "sources": [
+    {
+      "source": "auth_log",
+      "file": "auth.log",
+      "lines": 129,
+      "broken_lines": 0,
+      "year": 2026,
+      "tz": "+07:00"
+    }
+  ],
+  "ground_truth": "ground_truth.json"
+}

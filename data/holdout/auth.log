@@ -1,0 +1,129 @@
+Nov 20 14:03:00 db-01 sshd[4004]: Accepted publickey for dave from 10.0.2.24 port 64356 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 20 14:03:00 db-01 sshd[4004]: pam_unix(sshd:session): session opened for user dave(uid=1001) by (uid=0)
+Nov 20 14:03:00 db-01 systemd-logind[612]: New session 676 of user dave.
+Nov 20 14:03:08 web-01 sshd[3004]: Accepted publickey for dave from 10.0.2.24 port 56074 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 20 14:03:08 web-01 sshd[3004]: pam_unix(sshd:session): session opened for user dave(uid=1001) by (uid=0)
+Nov 20 14:03:08 web-01 systemd-logind[612]: New session 454 of user dave.
+Nov 20 14:04:00 bastion-01 sshd[5368]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.2.23  user=carol
+Nov 20 14:04:01 bastion-01 sshd[5368]: Failed password for carol from 10.0.2.23 port 52222 ssh2
+Nov 20 14:04:07 bastion-01 sshd[5368]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.2.23  user=carol
+Nov 20 14:04:08 bastion-01 sshd[5368]: Failed password for carol from 10.0.2.23 port 54647 ssh2
+Nov 20 14:04:16 bastion-01 sshd[5368]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.2.23  user=carol
+Nov 20 14:04:17 bastion-01 sshd[5368]: Failed password for carol from 10.0.2.23 port 62354 ssh2
+Nov 20 14:04:23 bastion-01 sshd[2004]: Accepted publickey for carol from 10.0.2.23 port 63410 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 20 14:04:23 bastion-01 sshd[2004]: pam_unix(sshd:session): session opened for user carol(uid=1001) by (uid=0)
+Nov 20 14:04:23 bastion-01 systemd-logind[612]: New session 481 of user carol.
+Nov 20 14:04:23 bastion-01 sshd[5368]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.2.23  user=carol
+Nov 20 14:04:24 bastion-01 sshd[5368]: Failed password for carol from 10.0.2.23 port 59363 ssh2
+Nov 20 14:04:33 bastion-01 sshd[5369]: Accepted password for carol from 10.0.2.23 port 50637 ssh2
+Nov 20 14:04:33 bastion-01 sshd[5369]: pam_unix(sshd:session): session opened for user carol(uid=1001) by (uid=0)
+Nov 20 14:04:33 bastion-01 systemd-logind[612]: New session 937 of user carol.
+Nov 20 14:05:01 bastion-01 CRON[2001]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:05:02 bastion-01 CRON[2001]: pam_unix(cron:session): session closed for user root
+Nov 20 14:06:00 bastion-01 sudo:    carol : TTY=pts/0 ; PWD=/home/carol ; USER=root ; COMMAND=/usr/bin/systemctl status nginx
+Nov 20 14:06:00 bastion-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by carol(uid=1001)
+Nov 20 14:06:01 web-01 CRON[3001]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:06:02 web-01 CRON[3001]: pam_unix(cron:session): session closed for user root
+Nov 20 14:06:12 bastion-01 sudo:    carol : TTY=pts/0 ; PWD=/home/carol ; USER=root ; COMMAND=/usr/bin/systemctl status nginx
+Nov 20 14:06:12 bastion-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by carol(uid=1001)
+Nov 20 14:06:20 bastion-01 sudo:    carol : TTY=pts/0 ; PWD=/home/carol ; USER=root ; COMMAND=/usr/bin/tail -n 100 /var/log/syslog
+Nov 20 14:06:20 bastion-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by carol(uid=1001)
+Nov 20 14:07:01 db-01 CRON[4001]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:07:02 db-01 CRON[4001]: pam_unix(cron:session): session closed for user root
+Nov 20 14:09:00 db-01 sshd[3457]: Invalid user oracle from 203.0.113.9 port 34785
+Nov 20 14:09:01 db-01 sshd[3457]: Failed password for invalid user oracle from 203.0.113.9 port 34785 ssh2
+Nov 20 14:09:02 db-01 sshd[3457]: Invalid user postgres from 203.0.113.9 port 42040
+Nov 20 14:09:03 db-01 sshd[3457]: Failed password for invalid user postgres from 203.0.113.9 port 42040 ssh2
+Nov 20 14:09:04 db-01 sshd[3457]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.9  user=backup
+Nov 20 14:09:05 db-01 sshd[3457]: Failed password for backup from 203.0.113.9 port 36039 ssh2
+Nov 20 14:09:07 db-01 sshd[3458]: Invalid user oracle from 203.0.113.9 port 51645
+Nov 20 14:09:08 db-01 sshd[3458]: Failed password for invalid user oracle from 203.0.113.9 port 51645 ssh2
+Nov 20 14:09:09 db-01 sshd[3458]: Invalid user postgres from 203.0.113.9 port 59990
+Nov 20 14:09:10 db-01 sshd[3458]: Failed password for invalid user postgres from 203.0.113.9 port 59990 ssh2
+Nov 20 14:09:12 db-01 sshd[3458]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.9  user=backup
+Nov 20 14:09:13 db-01 sshd[3458]: Failed password for backup from 203.0.113.9 port 45037 ssh2
+Nov 20 14:09:16 db-01 sshd[3459]: Invalid user oracle from 203.0.113.9 port 47116
+Nov 20 14:09:17 db-01 sshd[3459]: Failed password for invalid user oracle from 203.0.113.9 port 47116 ssh2
+Nov 20 14:09:18 db-01 sshd[3459]: Invalid user postgres from 203.0.113.9 port 41870
+Nov 20 14:09:19 db-01 sshd[3459]: Failed password for invalid user postgres from 203.0.113.9 port 41870 ssh2
+Nov 20 14:09:21 db-01 sshd[3459]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.9  user=backup
+Nov 20 14:09:22 db-01 sshd[3459]: Failed password for backup from 203.0.113.9 port 38602 ssh2
+Nov 20 14:09:24 db-01 sshd[3460]: Accepted password for backup from 203.0.113.9 port 33108 ssh2
+Nov 20 14:09:24 db-01 sshd[3460]: pam_unix(sshd:session): session opened for user backup(uid=1002) by (uid=0)
+Nov 20 14:09:33 bastion-01 sshd[5369]: pam_unix(sshd:session): session closed for user carol
+Nov 20 14:09:38 bastion-01 sshd[2004]: pam_unix(sshd:session): session closed for user carol
+Nov 20 14:09:43 web-01 sshd[3004]: pam_unix(sshd:session): session closed for user dave
+Nov 20 14:11:03 db-01 sshd[4004]: pam_unix(sshd:session): session closed for user dave
+Nov 20 14:18:00 web-01 sshd[3074]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=root
+Nov 20 14:18:01 web-01 sshd[3074]: Failed password for root from 198.51.100.88 port 55443 ssh2
+Nov 20 14:18:22 web-01 sshd[3074]: Invalid user www-data from 198.51.100.88 port 56999
+Nov 20 14:18:23 web-01 sshd[3074]: Failed password for invalid user www-data from 198.51.100.88 port 56999 ssh2
+Nov 20 14:18:44 web-01 sshd[3074]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=deploy
+Nov 20 14:18:45 web-01 sshd[3074]: Failed password for deploy from 198.51.100.88 port 56009 ssh2
+Nov 20 14:19:06 web-01 sshd[3075]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=root
+Nov 20 14:19:07 web-01 sshd[3075]: Failed password for root from 198.51.100.88 port 48624 ssh2
+Nov 20 14:19:21 db-01 sshd[4005]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.0.2.23  user=carol
+Nov 20 14:19:22 db-01 sshd[4005]: Failed password for carol from 10.0.2.23 port 59292 ssh2
+Nov 20 14:19:25 web-01 sshd[3075]: Invalid user www-data from 198.51.100.88 port 41132
+Nov 20 14:19:26 db-01 sshd[4006]: Accepted password for carol from 10.0.2.23 port 63929 ssh2
+Nov 20 14:19:26 db-01 sshd[4006]: pam_unix(sshd:session): session opened for user carol(uid=1001) by (uid=0)
+Nov 20 14:19:26 db-01 systemd-logind[612]: New session 786 of user carol.
+Nov 20 14:19:26 web-01 sshd[3075]: Failed password for invalid user www-data from 198.51.100.88 port 41132 ssh2
+Nov 20 14:19:45 web-01 sshd[3075]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=deploy
+Nov 20 14:19:46 web-01 sshd[3075]: Failed password for deploy from 198.51.100.88 port 35629 ssh2
+Nov 20 14:20:01 bastion-01 CRON[2002]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:20:02 bastion-01 CRON[2002]: pam_unix(cron:session): session closed for user root
+Nov 20 14:20:07 web-01 sshd[3076]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=root
+Nov 20 14:20:08 web-01 sshd[3076]: Failed password for root from 198.51.100.88 port 56098 ssh2
+Nov 20 14:20:29 web-01 sshd[3076]: Invalid user www-data from 198.51.100.88 port 41748
+Nov 20 14:20:30 web-01 sshd[3076]: Failed password for invalid user www-data from 198.51.100.88 port 41748 ssh2
+Nov 20 14:20:51 web-01 sshd[3076]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=deploy
+Nov 20 14:20:52 web-01 sshd[3076]: Failed password for deploy from 198.51.100.88 port 51113 ssh2
+Nov 20 14:21:01 web-01 CRON[3002]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:21:02 web-01 CRON[3002]: pam_unix(cron:session): session closed for user root
+Nov 20 14:21:13 web-01 sshd[3077]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.88  user=root
+Nov 20 14:21:14 web-01 sshd[3077]: Failed password for root from 198.51.100.88 port 59039 ssh2
+Nov 20 14:21:24 bastion-01 sshd[2005]: Accepted publickey for bob from 10.0.2.22 port 51338 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 20 14:21:24 bastion-01 sshd[2005]: pam_unix(sshd:session): session opened for user bob(uid=1001) by (uid=0)
+Nov 20 14:21:24 bastion-01 systemd-logind[612]: New session 907 of user bob.
+Nov 20 14:21:33 web-01 sshd[3078]: Accepted password for deploy from 198.51.100.88 port 36219 ssh2
+Nov 20 14:21:33 web-01 sshd[3078]: pam_unix(sshd:session): session opened for user deploy(uid=1002) by (uid=0)
+Nov 20 14:22:01 db-01 CRON[4002]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:22:02 db-01 CRON[4002]: pam_unix(cron:session): session closed for user root
+Nov 20 14:23:15 db-01 sshd[4006]: pam_unix(sshd:session): session closed for user carol
+Nov 20 14:24:50 bastion-01 sshd[2005]: pam_unix(sshd:session): session closed for user bob
+Nov 20 14:31:00 bastion-01 sshd[3304]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:01 bastion-01 sshd[3304]: Failed password for dave from 198.51.100.77 port 60076 ssh2
+Nov 20 14:31:03 bastion-01 sshd[3304]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:04 bastion-01 sshd[3304]: Failed password for dave from 198.51.100.77 port 38305 ssh2
+Nov 20 14:31:07 bastion-01 sshd[3304]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:08 bastion-01 sshd[3304]: Failed password for dave from 198.51.100.77 port 37946 ssh2
+Nov 20 14:31:12 bastion-01 sshd[3305]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:13 bastion-01 sshd[3305]: Failed password for dave from 198.51.100.77 port 48198 ssh2
+Nov 20 14:31:15 bastion-01 sshd[3305]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:16 bastion-01 sshd[3305]: Failed password for dave from 198.51.100.77 port 43006 ssh2
+Nov 20 14:31:18 bastion-01 sshd[3305]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:19 bastion-01 sshd[3305]: Failed password for dave from 198.51.100.77 port 54862 ssh2
+Nov 20 14:31:23 bastion-01 sshd[3306]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:24 bastion-01 sshd[3306]: Failed password for dave from 198.51.100.77 port 50170 ssh2
+Nov 20 14:31:25 bastion-01 sshd[3306]: pam_faillock(sshd:auth): Consecutive login failures for user dave account temporarily locked
+Nov 20 14:31:27 bastion-01 sshd[3307]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:28 bastion-01 sshd[3307]: Failed password for dave from 198.51.100.77 port 53504 ssh2
+Nov 20 14:31:29 bastion-01 sshd[3307]: pam_faillock(sshd:auth): Consecutive login failures for user dave account temporarily locked
+Nov 20 14:31:31 bastion-01 sshd[3308]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.77  user=dave
+Nov 20 14:31:32 bastion-01 sshd[3308]: Failed password for dave from 198.51.100.77 port 48441 ssh2
+Nov 20 14:31:33 bastion-01 sshd[3308]: pam_faillock(sshd:auth): Consecutive login failures for user dave account temporarily locked
+Nov 20 14:32:13 web-01 sshd[3005]: Accepted publickey for alice from 10.0.2.21 port 57709 ssh2: ED25519 SHA256:SYNTHETICxFINGERPRINTxFORxLABxUSExONLYx0001
+Nov 20 14:32:13 web-01 sshd[3005]: pam_unix(sshd:session): session opened for user alice(uid=1001) by (uid=0)
+Nov 20 14:32:13 web-01 systemd-logind[612]: New session 472 of user alice.
+Nov 20 14:35:01 bastion-01 CRON[2003]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:35:02 bastion-01 CRON[2003]: pam_unix(cron:session): session closed for user root
+Nov 20 14:36:01 web-01 CRON[3003]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:36:02 web-01 CRON[3003]: pam_unix(cron:session): session closed for user root
+Nov 20 14:37:01 db-01 CRON[4003]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Nov 20 14:37:02 db-01 CRON[4003]: pam_unix(cron:session): session closed for user root
+Nov 20 14:39:32 web-01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/tail -n 100 /var/log/syslog
+Nov 20 14:39:32 web-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by alice(uid=1001)
+Nov 20 14:40:00 web-01 sudo:    alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/tail -n 100 /var/log/syslog
+Nov 20 14:40:00 web-01 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by alice(uid=1001)
+Nov 20 14:42:09 web-01 sshd[3005]: pam_unix(sshd:session): session closed for user alice

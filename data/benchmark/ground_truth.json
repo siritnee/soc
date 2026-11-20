@@ -1,0 +1,306 @@
+{
+  "dataset": "soc-benchmark-v1",
+  "scenarios": [
+    {
+      "scenario_id": "beaconing",
+      "kind": "beaconing",
+      "malicious": true,
+      "expected_rule": "MALWARE_BEACONING",
+      "start_utc": "2026-11-12T01:10:00.000000Z",
+      "end_utc": "2026-11-12T01:49:08.039960Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.40"
+        ],
+        "dst_ip": [
+          "203.0.113.200"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "10.0.2.40 contacts 203.0.113.200:443 40 times, about every 60 seconds."
+    },
+    {
+      "scenario_id": "decoy-typo-login",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:15:00.000000Z",
+      "end_utc": "2026-11-12T01:15:23.000000Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.21"
+        ],
+        "hostname": [
+          "web-01"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "alice mistypes the password 3 times on web-01, then logs in. Not an attack."
+    },
+    {
+      "scenario_id": "decoy-irregular-alerts",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:20:00.000000Z",
+      "end_utc": "2026-11-12T01:35:50.000000Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.22"
+        ],
+        "dst_ip": [
+          "192.0.2.80"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "8 alerts \"LAB POLICY Cleartext HTTP to external site\" from 10.0.2.22 to 192.0.2.80. Not an attack."
+    },
+    {
+      "scenario_id": "ssh-bruteforce-login",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "start_utc": "2026-11-12T01:25:00.000000Z",
+      "end_utc": "2026-11-12T01:25:44.000000Z",
+      "match": {
+        "src_ip": [
+          "203.0.113.50"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "203.0.113.50 tries 12 SSH passwords on bastion-01 then logs in as deploy."
+    },
+    {
+      "scenario_id": "decoy-slow-failures",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:30:00.000000Z",
+      "end_utc": "2026-11-12T01:39:01.000000Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.22"
+        ],
+        "hostname": [
+          "db-01"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "bob mistypes the password 6 times on db-01, then logs in. Not an attack."
+    },
+    {
+      "scenario_id": "decoy-periodic-low-alerts",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:35:00.000000Z",
+      "end_utc": "2026-11-12T02:05:00.000000Z",
+      "match": {
+        "src_ip": [
+          "10.0.1.10"
+        ],
+        "dst_ip": [
+          "192.0.2.81"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "7 alerts \"LAB INFO Software update check\" from 10.0.1.10 to 192.0.2.81. Not an attack."
+    },
+    {
+      "scenario_id": "portscan-network",
+      "kind": "port_scan",
+      "malicious": true,
+      "expected_rule": "INTERNAL_PORT_SCAN",
+      "start_utc": "2026-11-12T01:40:00.009156Z",
+      "end_utc": "2026-11-12T01:40:20.022413Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.99"
+        ],
+        "dst_ip": [
+          "10.0.1.10"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "10.0.2.99 connects to 200 different ports on 10.0.1.10 in about 20 seconds."
+    },
+    {
+      "scenario_id": "decoy-appdata-program",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:45:00.000000Z",
+      "end_utc": "2026-11-12T01:45:04.000000Z",
+      "match": {
+        "hostname": [
+          "WS-04.lab.example"
+        ]
+      },
+      "sources": [
+        "sysmon"
+      ],
+      "description": "dave starts LabChat, a legitimate program installed under AppData, on WS-04. Not an attack."
+    },
+    {
+      "scenario_id": "ssh-bruteforce-gave-up",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T01:50:00.000000Z",
+      "end_utc": "2026-11-12T01:50:31.000000Z",
+      "match": {
+        "src_ip": [
+          "203.0.113.51"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "203.0.113.51 tries 9 SSH passwords on db-01 and gives up."
+    },
+    {
+      "scenario_id": "process-temp",
+      "kind": "suspicious_process",
+      "malicious": true,
+      "expected_rule": "SUSPICIOUS_PROCESS",
+      "start_utc": "2026-11-12T01:55:00.000000Z",
+      "end_utc": "2026-11-12T01:55:06.000000Z",
+      "match": {
+        "hostname": [
+          "WS-01.lab.example"
+        ]
+      },
+      "sources": [
+        "sysmon"
+      ],
+      "description": "alice runs invoice_viewer.exe from the Temp folder on WS-01."
+    },
+    {
+      "scenario_id": "decoy-few-ports",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T02:00:00.353720Z",
+      "end_utc": "2026-11-12T02:00:20.318728Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.10"
+        ],
+        "dst_ip": [
+          "10.0.1.11"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "10.0.2.10 connects to 10 different ports on 10.0.1.11 in about 20 seconds. Not an attack."
+    },
+    {
+      "scenario_id": "process-encoded",
+      "kind": "suspicious_process",
+      "malicious": true,
+      "expected_rule": "SUSPICIOUS_PROCESS",
+      "start_utc": "2026-11-12T02:05:00.000000Z",
+      "end_utc": "2026-11-12T02:05:00.000000Z",
+      "match": {
+        "hostname": [
+          "WS-02.lab.example"
+        ]
+      },
+      "sources": [
+        "sysmon"
+      ],
+      "description": "Word starts PowerShell with an encoded command on WS-02."
+    },
+    {
+      "scenario_id": "decoy-slow-sweep",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-12T02:10:08.988464Z",
+      "end_utc": "2026-11-12T02:19:35.718326Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.10"
+        ],
+        "dst_ip": [
+          "10.0.1.10"
+        ]
+      },
+      "sources": [
+        "suricata"
+      ],
+      "description": "10.0.2.10 connects to 20 different ports on 10.0.1.10 in about 570 seconds. Not an attack."
+    },
+    {
+      "scenario_id": "ssh-bruteforce-lockout",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "start_utc": "2026-11-12T02:20:00.000000Z",
+      "end_utc": "2026-11-12T02:20:42.000000Z",
+      "match": {
+        "src_ip": [
+          "198.51.100.23"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "198.51.100.23 tries 8 SSH passwords on web-01 until alice is locked out."
+    },
+    {
+      "scenario_id": "portscan-host",
+      "kind": "port_scan",
+      "malicious": true,
+      "expected_rule": "INTERNAL_PORT_SCAN",
+      "start_utc": "2026-11-12T02:35:00.037000Z",
+      "end_utc": "2026-11-12T02:35:10.011000Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.23"
+        ],
+        "dst_ip": [
+          "10.0.1.20"
+        ]
+      },
+      "sources": [
+        "sysmon"
+      ],
+      "description": "WS-03 (10.0.2.23) connects to 60 different ports on 10.0.1.20 in about 10 seconds."
+    },
+    {
+      "scenario_id": "pivot",
+      "kind": "pivot",
+      "malicious": true,
+      "expected_rule": "NETWORK_TO_HOST_PIVOT",
+      "start_utc": "2026-11-12T02:45:00.000000Z",
+      "end_utc": "2026-11-12T02:47:36.695000Z",
+      "match": {
+        "src_ip": [
+          "203.0.113.77",
+          "10.0.2.24"
+        ]
+      },
+      "sources": [
+        "suricata",
+        "sysmon"
+      ],
+      "description": "Suricata alerts on an exploit from 203.0.113.77 against WS-04 (10.0.2.24); then WS-04 connects to 4 internal machines."
+    }
+  ]
+}
