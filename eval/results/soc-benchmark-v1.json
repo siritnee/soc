@@ -1,0 +1,463 @@
+{
+  "dataset": "soc-benchmark-v1",
+  "seed": 2026,
+  "start_utc": "2026-11-12T01:00:00.000000Z",
+  "end_utc": "2026-11-12T03:00:00.000000Z",
+  "events": 1138,
+  "ingest": {
+    "auth_log": {
+      "lines": 233,
+      "events": 82,
+      "ignored": 149,
+      "invalid": 2
+    },
+    "suricata": {
+      "lines": 788,
+      "events": 780,
+      "ignored": 6,
+      "invalid": 2
+    },
+    "sysmon": {
+      "lines": 324,
+      "events": 276,
+      "ignored": 46,
+      "invalid": 2
+    }
+  },
+  "alert_reduction": {
+    "raw_alerts": 278,
+    "incidents": 9,
+    "reduction": 0.9676258992805755,
+    "by_rule": {
+      "INTERNAL_PORT_SCAN": {
+        "raw_alerts": 232,
+        "incidents": 2,
+        "reduction": 0.9913793103448276
+      },
+      "MALWARE_BEACONING": {
+        "raw_alerts": 35,
+        "incidents": 1,
+        "reduction": 0.9714285714285714
+      },
+      "NETWORK_TO_HOST_PIVOT": {
+        "raw_alerts": 6,
+        "incidents": 1,
+        "reduction": 0.8333333333333334
+      },
+      "SSH_BRUTE_FORCE": {
+        "raw_alerts": 2,
+        "incidents": 2,
+        "reduction": 0.0
+      },
+      "SUSPICIOUS_PROCESS": {
+        "raw_alerts": 3,
+        "incidents": 3,
+        "reduction": 0.0
+      }
+    }
+  },
+  "detection": {
+    "incidents": 9,
+    "true_positives": 8,
+    "false_positives": 1,
+    "attacks_with_a_rule": 8,
+    "attacks_found": 8,
+    "attacks_missed": 0,
+    "precision": 0.8888888888888888,
+    "recall": 1.0,
+    "f1": 0.9411764705882353,
+    "all_attacks": 9,
+    "all_attacks_found": 8,
+    "harmless_scenarios": 7,
+    "harmless_scenarios_flagged": 1
+  },
+  "latency_seconds": {
+    "count": 8,
+    "mean": 51.755,
+    "median": 16.692,
+    "min": 0.0,
+    "max": 290.243
+  },
+  "scenarios": [
+    {
+      "scenario_id": "beaconing",
+      "kind": "beaconing",
+      "malicious": true,
+      "expected_rule": "MALWARE_BEACONING",
+      "description": "10.0.2.40 contacts 203.0.113.200:443 40 times, about every 60 seconds.",
+      "start_utc": "2026-11-12T01:10:00.000000Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "MALWARE_BEACONING"
+      ],
+      "latency_seconds": 290.243
+    },
+    {
+      "scenario_id": "decoy-typo-login",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "alice mistypes the password 3 times on web-01, then logs in. Not an attack.",
+      "start_utc": "2026-11-12T01:15:00.000000Z",
+      "sources": [
+        "auth_log"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "decoy-irregular-alerts",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "8 alerts \"LAB POLICY Cleartext HTTP to external site\" from 10.0.2.22 to 192.0.2.80. Not an attack.",
+      "start_utc": "2026-11-12T01:20:00.000000Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "ssh-bruteforce-login",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "description": "203.0.113.50 tries 12 SSH passwords on bastion-01 then logs in as deploy.",
+      "start_utc": "2026-11-12T01:25:00.000000Z",
+      "sources": [
+        "auth_log"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "SSH_BRUTE_FORCE"
+      ],
+      "latency_seconds": 44.0
+    },
+    {
+      "scenario_id": "decoy-slow-failures",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "bob mistypes the password 6 times on db-01, then logs in. Not an attack.",
+      "start_utc": "2026-11-12T01:30:00.000000Z",
+      "sources": [
+        "auth_log"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "decoy-periodic-low-alerts",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "7 alerts \"LAB INFO Software update check\" from 10.0.1.10 to 192.0.2.81. Not an attack.",
+      "start_utc": "2026-11-12T01:35:00.000000Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "portscan-network",
+      "kind": "port_scan",
+      "malicious": true,
+      "expected_rule": "INTERNAL_PORT_SCAN",
+      "description": "10.0.2.99 connects to 200 different ports on 10.0.1.10 in about 20 seconds.",
+      "start_utc": "2026-11-12T01:40:00.009156Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "INTERNAL_PORT_SCAN"
+      ],
+      "latency_seconds": 1.416
+    },
+    {
+      "scenario_id": "decoy-appdata-program",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "dave starts LabChat, a legitimate program installed under AppData, on WS-04. Not an attack.",
+      "start_utc": "2026-11-12T01:45:00.000000Z",
+      "sources": [
+        "sysmon"
+      ],
+      "detected": false,
+      "incident_rules": [
+        "SUSPICIOUS_PROCESS"
+      ],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "ssh-bruteforce-gave-up",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": null,
+      "description": "203.0.113.51 tries 9 SSH passwords on db-01 and gives up.",
+      "start_utc": "2026-11-12T01:50:00.000000Z",
+      "sources": [
+        "auth_log"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "process-temp",
+      "kind": "suspicious_process",
+      "malicious": true,
+      "expected_rule": "SUSPICIOUS_PROCESS",
+      "description": "alice runs invoice_viewer.exe from the Temp folder on WS-01.",
+      "start_utc": "2026-11-12T01:55:00.000000Z",
+      "sources": [
+        "sysmon"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "SUSPICIOUS_PROCESS"
+      ],
+      "latency_seconds": 0.0
+    },
+    {
+      "scenario_id": "decoy-few-ports",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "10.0.2.10 connects to 10 different ports on 10.0.1.11 in about 20 seconds. Not an attack.",
+      "start_utc": "2026-11-12T02:00:00.353720Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "process-encoded",
+      "kind": "suspicious_process",
+      "malicious": true,
+      "expected_rule": "SUSPICIOUS_PROCESS",
+      "description": "Word starts PowerShell with an encoded command on WS-02.",
+      "start_utc": "2026-11-12T02:05:00.000000Z",
+      "sources": [
+        "sysmon"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "SUSPICIOUS_PROCESS"
+      ],
+      "latency_seconds": 0.0
+    },
+    {
+      "scenario_id": "decoy-slow-sweep",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "description": "10.0.2.10 connects to 20 different ports on 10.0.1.10 in about 570 seconds. Not an attack.",
+      "start_utc": "2026-11-12T02:10:08.988464Z",
+      "sources": [
+        "suricata"
+      ],
+      "detected": false,
+      "incident_rules": [],
+      "latency_seconds": null
+    },
+    {
+      "scenario_id": "ssh-bruteforce-lockout",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "description": "198.51.100.23 tries 8 SSH passwords on web-01 until alice is locked out.",
+      "start_utc": "2026-11-12T02:20:00.000000Z",
+      "sources": [
+        "auth_log"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "SSH_BRUTE_FORCE"
+      ],
+      "latency_seconds": 31.0
+    },
+    {
+      "scenario_id": "portscan-host",
+      "kind": "port_scan",
+      "malicious": true,
+      "expected_rule": "INTERNAL_PORT_SCAN",
+      "description": "WS-03 (10.0.2.23) connects to 60 different ports on 10.0.1.20 in about 10 seconds.",
+      "start_utc": "2026-11-12T02:35:00.037000Z",
+      "sources": [
+        "sysmon"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "INTERNAL_PORT_SCAN"
+      ],
+      "latency_seconds": 2.383
+    },
+    {
+      "scenario_id": "pivot",
+      "kind": "pivot",
+      "malicious": true,
+      "expected_rule": "NETWORK_TO_HOST_PIVOT",
+      "description": "Suricata alerts on an exploit from 203.0.113.77 against WS-04 (10.0.2.24); then WS-04 connects to 4 internal machines.",
+      "start_utc": "2026-11-12T02:45:00.000000Z",
+      "sources": [
+        "suricata",
+        "sysmon"
+      ],
+      "detected": true,
+      "incident_rules": [
+        "NETWORK_TO_HOST_PIVOT"
+      ],
+      "latency_seconds": 45.0
+    }
+  ],
+  "incidents": [
+    {
+      "rule_id": "MALWARE_BEACONING",
+      "severity": "high",
+      "title": "Periodic IDS alert (possible malware beaconing)",
+      "dedup_key": "MALWARE_BEACONING|10.0.2.40->203.0.113.200",
+      "first_seen_utc": "2026-11-12T01:10:00.000000Z",
+      "detected_at_utc": "2026-11-12T01:14:50.242743Z",
+      "last_seen_utc": "2026-11-12T01:49:08.039960Z",
+      "events": 40,
+      "raw_alerts": 35,
+      "verdict": "true_positive",
+      "scenarios": [
+        "beaconing"
+      ]
+    },
+    {
+      "rule_id": "SSH_BRUTE_FORCE",
+      "severity": "critical",
+      "title": "SSH brute-force detected (login succeeded)",
+      "dedup_key": "SSH_BRUTE_FORCE|203.0.113.50",
+      "first_seen_utc": "2026-11-12T01:25:01.000000Z",
+      "detected_at_utc": "2026-11-12T01:25:44.000000Z",
+      "last_seen_utc": "2026-11-12T01:25:44.000000Z",
+      "events": 13,
+      "raw_alerts": 1,
+      "verdict": "true_positive",
+      "scenarios": [
+        "ssh-bruteforce-login"
+      ]
+    },
+    {
+      "rule_id": "INTERNAL_PORT_SCAN",
+      "severity": "medium",
+      "title": "Internal port scan detected",
+      "dedup_key": "INTERNAL_PORT_SCAN|10.0.2.99->10.0.1.10",
+      "first_seen_utc": "2026-11-12T01:40:00.009156Z",
+      "detected_at_utc": "2026-11-12T01:40:01.425279Z",
+      "last_seen_utc": "2026-11-12T01:40:20.022413Z",
+      "events": 200,
+      "raw_alerts": 186,
+      "verdict": "true_positive",
+      "scenarios": [
+        "portscan-network"
+      ]
+    },
+    {
+      "rule_id": "SUSPICIOUS_PROCESS",
+      "severity": "medium",
+      "title": "Suspicious process execution",
+      "dedup_key": "SUSPICIOUS_PROCESS|WS-04.lab.example",
+      "first_seen_utc": "2026-11-12T01:45:00.000000Z",
+      "detected_at_utc": "2026-11-12T01:45:00.000000Z",
+      "last_seen_utc": "2026-11-12T01:45:00.000000Z",
+      "events": 1,
+      "raw_alerts": 1,
+      "verdict": "false_positive",
+      "scenarios": [
+        "decoy-appdata-program"
+      ]
+    },
+    {
+      "rule_id": "SUSPICIOUS_PROCESS",
+      "severity": "medium",
+      "title": "Suspicious process execution",
+      "dedup_key": "SUSPICIOUS_PROCESS|WS-01.lab.example",
+      "first_seen_utc": "2026-11-12T01:55:00.000000Z",
+      "detected_at_utc": "2026-11-12T01:55:00.000000Z",
+      "last_seen_utc": "2026-11-12T01:55:00.000000Z",
+      "events": 1,
+      "raw_alerts": 1,
+      "verdict": "true_positive",
+      "scenarios": [
+        "process-temp"
+      ]
+    },
+    {
+      "rule_id": "SUSPICIOUS_PROCESS",
+      "severity": "high",
+      "title": "Suspicious process execution",
+      "dedup_key": "SUSPICIOUS_PROCESS|WS-02.lab.example",
+      "first_seen_utc": "2026-11-12T02:05:00.000000Z",
+      "detected_at_utc": "2026-11-12T02:05:00.000000Z",
+      "last_seen_utc": "2026-11-12T02:05:00.000000Z",
+      "events": 1,
+      "raw_alerts": 1,
+      "verdict": "true_positive",
+      "scenarios": [
+        "process-encoded"
+      ]
+    },
+    {
+      "rule_id": "SSH_BRUTE_FORCE",
+      "severity": "high",
+      "title": "SSH brute-force detected (account locked)",
+      "dedup_key": "SSH_BRUTE_FORCE|198.51.100.23",
+      "first_seen_utc": "2026-11-12T02:20:01.000000Z",
+      "detected_at_utc": "2026-11-12T02:20:31.000000Z",
+      "last_seen_utc": "2026-11-12T02:20:31.000000Z",
+      "events": 9,
+      "raw_alerts": 1,
+      "verdict": "true_positive",
+      "scenarios": [
+        "ssh-bruteforce-lockout"
+      ]
+    },
+    {
+      "rule_id": "INTERNAL_PORT_SCAN",
+      "severity": "medium",
+      "title": "Internal port scan detected",
+      "dedup_key": "INTERNAL_PORT_SCAN|10.0.2.23->10.0.1.20",
+      "first_seen_utc": "2026-11-12T02:35:00.037000Z",
+      "detected_at_utc": "2026-11-12T02:35:02.420000Z",
+      "last_seen_utc": "2026-11-12T02:35:10.011000Z",
+      "events": 60,
+      "raw_alerts": 46,
+      "verdict": "true_positive",
+      "scenarios": [
+        "portscan-host"
+      ]
+    },
+    {
+      "rule_id": "NETWORK_TO_HOST_PIVOT",
+      "severity": "critical",
+      "title": "Network alert followed by internal connections (possible pivot)",
+      "dedup_key": "NETWORK_TO_HOST_PIVOT|10.0.2.24",
+      "first_seen_utc": "2026-11-12T02:45:00.000000Z",
+      "detected_at_utc": "2026-11-12T02:45:45.000000Z",
+      "last_seen_utc": "2026-11-12T02:53:15.160000Z",
+      "events": 7,
+      "raw_alerts": 6,
+      "verdict": "true_positive",
+      "scenarios": [
+        "pivot"
+      ]
+    }
+  ]
+}
