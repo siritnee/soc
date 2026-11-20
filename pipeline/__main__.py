@@ -10,7 +10,8 @@ import tempfile
 from pathlib import Path
 from typing import Iterator
 from normalizer.schema import normalize_event
-from storage.models import connect, init_db, insert_events, list_events, insert_incident, counts
+from storage.models import connect, init_db, insert_events, list_events, counts
+from engine.incident import save_new_incidents
 
 
 def read_normalized_jsonl(path: Path) -> Iterator[dict]:
@@ -47,21 +48,15 @@ def do_ingest(db_path: str, source: str, file_path: str) -> int:
 
 
 def do_detect(db_path: str) -> int:
-    try:
-        from engine.correlation import detect_incidents
-    except ImportError as exc:
-        raise RuntimeError(
-            "Engine pending: member 4 must implement engine.correlation.detect_incidents(events)"
-        ) from exc
+    from engine.correlation import detect_incidents
+
     with connect(db_path) as conn:
         init_db(conn)
-        incidents = detect_incidents(list_events(conn))
-        inserted = 0
-        for inc in incidents:
-            insert_incident(conn, inc)
-            inserted += 1
-        return inserted
 
+        events = list_events(conn)
+        incidents = detect_incidents(events)
+
+        return save_new_incidents(conn, incidents)
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pipeline")
