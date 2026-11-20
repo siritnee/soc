@@ -1,0 +1,31 @@
+{
+  "name": "soc-benchmark-v1",
+  "description": "Two hours of lab activity in three log sources with labelled attacks and harmless look-alikes.",
+  "seed": 2026,
+  "built_with": "python -m datagen.benchmark --out data/benchmark --holdout data/holdout",
+  "start_utc": "2026-11-12T01:00:00.000000Z",
+  "end_utc": "2026-11-12T03:00:00.000000Z",
+  "sources": [
+    {
+      "source": "auth_log",
+      "file": "auth.log",
+      "lines": 233,
+      "broken_lines": 2,
+      "year": 2026,
+      "tz": "+07:00"
+    },
+    {
+      "source": "suricata",
+      "file": "eve.json",
+      "lines": 788,
+      "broken_lines": 2
+    },
+    {
+      "source": "sysmon",
+      "file": "sysmon.json",
+      "lines": 324,
+      "broken_lines": 2
+    }
+  ],
+  "ground_truth": "ground_truth.json"
+}
