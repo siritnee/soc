@@ -1,0 +1,76 @@
+{
+  "dataset": "soc-holdout-bruteforce",
+  "scenarios": [
+    {
+      "scenario_id": "holdout-typo-login",
+      "kind": "decoy",
+      "malicious": false,
+      "expected_rule": null,
+      "start_utc": "2026-11-20T07:04:00.000000Z",
+      "end_utc": "2026-11-20T07:04:33.000000Z",
+      "match": {
+        "src_ip": [
+          "10.0.2.23"
+        ],
+        "hostname": [
+          "bastion-01"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "carol mistypes the password 4 times on bastion-01, then logs in. Not an attack."
+    },
+    {
+      "scenario_id": "holdout-bruteforce-login",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "start_utc": "2026-11-20T07:09:00.000000Z",
+      "end_utc": "2026-11-20T07:09:24.000000Z",
+      "match": {
+        "src_ip": [
+          "203.0.113.9"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "203.0.113.9 tries 9 SSH passwords on db-01 then logs in as backup."
+    },
+    {
+      "scenario_id": "holdout-slow-bruteforce",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": null,
+      "start_utc": "2026-11-20T07:18:00.000000Z",
+      "end_utc": "2026-11-20T07:21:33.000000Z",
+      "match": {
+        "src_ip": [
+          "198.51.100.88"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "198.51.100.88 tries 10 SSH passwords on web-01 then logs in as deploy. One try every 20 seconds: never five failures inside one minute."
+    },
+    {
+      "scenario_id": "holdout-bruteforce-lockout",
+      "kind": "ssh_brute_force",
+      "malicious": true,
+      "expected_rule": "SSH_BRUTE_FORCE",
+      "start_utc": "2026-11-20T07:31:00.000000Z",
+      "end_utc": "2026-11-20T07:31:33.000000Z",
+      "match": {
+        "src_ip": [
+          "198.51.100.77"
+        ]
+      },
+      "sources": [
+        "auth_log"
+      ],
+      "description": "198.51.100.77 tries 7 SSH passwords on bastion-01 until dave is locked out."
+    }
+  ]
+}
