@@ -17,6 +17,7 @@ from engine.incident import export_summary_from_db, load_incident, save_new_inci
 from engine.net import is_internal
 from eval.dataset import parse_source
 from storage.models import insert_events, list_events, set_incident_status
+from datetime import date
 
 STATUSES = ("New", "In Progress", "Closed")
 OPEN_STATUSES = ("New", "In Progress")
@@ -108,6 +109,21 @@ def list_incidents(conn: sqlite3.Connection, statuses: Sequence[str] = (), sever
     return rows
 
 
+def incidents_on_day(
+    incidents: Sequence[dict[str, Any]],
+    day: date,
+) -> list[dict[str, Any]]:
+    """Return incidents active at any time during a UTC date."""
+    selected = day.isoformat()
+
+    return [
+        item for item in incidents
+        if item["first_seen_utc"][:10]
+        <= selected
+        <= item["last_seen_utc"][:10]
+    ]
+
+
 def incident_details(conn: sqlite3.Connection, incident_id: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """One incident and its events, oldest first."""
     return load_incident(conn, incident_id)
@@ -178,9 +194,30 @@ def search_events(conn: sqlite3.Connection, *, ip: str = "", start_utc: str | No
 
 # ---- analysing an uploaded log ----------------------------------------------------------
 
-def file_digest(source: str, data: bytes) -> str:
-    """Identifies an upload, so the same file is not loaded twice by accident."""
-    return hashlib.sha256(source.encode("utf-8") + b"\0" + data).hexdigest()
+
+def file_digest(
+    source: str,
+    data: bytes,
+    *,
+    year: int | None = None,
+    tz: str | None = None,
+) -> str:
+    """Fingerprint a file together with its parsing configuration."""
+    options = {
+        "source": source,
+        "year": year if source == "auth_log" else None,
+        "tz": tz if source == "auth_log" else None,
+    }
+
+    import json
+
+    metadata = json.dumps(
+        options, sort_keys=True
+    ).encode("utf-8")
+
+    return hashlib.sha256(
+        metadata + b"\0" + data
+    ).hexdigest()
 
 
 def analyze_log(conn: sqlite3.Connection, source: str, data: bytes, *, year: int | None = None,
@@ -190,15 +227,84 @@ def analyze_log(conn: sqlite3.Connection, source: str, data: bytes, *, year: int
     Returns the parser statistics, how many events were stored and the ids of
     the incidents that are new.
     """
-    before = {row[0] for row in conn.execute("SELECT incident_id FROM incidents")}
+
+    digest = file_digest(source, data, year=year, tz=tz)
+
+    already_imported = conn.execute(
+        "SELECT 1 FROM ingested_files WHERE digest = ?",
+        (digest,),
+    ).fetchone()
+
+    if already_imported:
+        return {
+            "stats": {},
+            "stored": 0,
+            "new_incident_ids": [],
+            "duplicate": True,
+        }
+
+    before = {
+        row[0]
+        for row in conn.execute(
+            "SELECT incident_id FROM incidents"
+        )
+    }
+
     handle, name = tempfile.mkstemp(suffix=".log")
+
     try:
         with os.fdopen(handle, "wb") as temp:
             temp.write(data)
-        stats: dict[str, Any] = {}
-        stored = insert_events(conn, parse_source(source, Path(name), stats, year=year, tz=tz))
+
+        stats = {}
+
+        stored = insert_events(
+            conn,
+            parse_source(
+                source,
+                Path(name),
+                stats,
+                year=year,
+                tz=tz,
+            ),
+        )
+
     finally:
         os.unlink(name)
-    save_new_incidents(conn, detect_incidents(list_events(conn)))
-    after = [row[0] for row in conn.execute("SELECT incident_id FROM incidents ORDER BY incident_id")]
-    return {"stats": stats, "stored": stored, "new_incident_ids": [i for i in after if i not in before]}
+
+    save_new_incidents(
+        conn,
+        detect_incidents(list_events(conn)),
+    )
+
+    after = [
+        row[0]
+        for row in conn.execute(
+            """
+            SELECT incident_id
+            FROM incidents
+            ORDER BY incident_id
+            """
+        )
+    ]
+
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO ingested_files
+                (digest, source, stored_events)
+            VALUES (?, ?, ?)
+            """,
+            (digest, source, stored),
+        )
+
+    return {
+        "stats": stats,
+        "stored": stored,
+        "new_incident_ids": [
+            incident_id
+            for incident_id in after
+            if incident_id not in before
+        ],
+        "duplicate": False,
+    }

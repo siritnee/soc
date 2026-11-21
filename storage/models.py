@@ -45,6 +45,12 @@ CREATE TABLE IF NOT EXISTS incident_events (
     FOREIGN KEY (incident_id) REFERENCES incidents(incident_id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS ingested_files (
+    digest TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    stored_events INTEGER NOT NULL,
+    imported_utc TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 COLUMNS = (

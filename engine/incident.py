@@ -11,34 +11,156 @@ from storage.models import insert_incident
 _CHUNK = 500  # stay well below SQLite's bound-parameter limit
 
 
-def _already_stored(conn: sqlite3.Connection, rule_id: str, event_ids: Sequence[int]) -> bool:
-    for start in range(0, len(event_ids), _CHUNK):
-        chunk = list(event_ids[start:start + _CHUNK])
+
+_SEVERITY_RANK = {
+    "info": 0,
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4,
+}
+
+
+def _find_existing_incident_id(conn, rule_id, event_ids):
+    """Find the stored incident sharing the most events with this result."""
+    overlap = {}
+
+    ids = list(dict.fromkeys(int(x) for x in event_ids))
+
+    for start in range(0, len(ids), _CHUNK):
+        chunk = ids[start:start + _CHUNK]
+        if not chunk:
+            continue
+
         marks = ",".join("?" for _ in chunk)
-        row = conn.execute(
-            f"""SELECT 1 FROM incidents i
-                JOIN incident_events ie ON ie.incident_id = i.incident_id
-                WHERE i.rule_id = ? AND ie.event_id IN ({marks}) LIMIT 1""",
+
+        rows = conn.execute(
+            f"""
+            SELECT ie.incident_id, COUNT(*) AS shared_events
+            FROM incident_events ie
+            JOIN incidents i
+              ON i.incident_id = ie.incident_id
+            WHERE i.rule_id = ?
+              AND ie.event_id IN ({marks})
+            GROUP BY ie.incident_id
+            """,
             [rule_id, *chunk],
-        ).fetchone()
-        if row:
-            return True
-    return False
+        ).fetchall()
+
+        for incident_id, shared in rows:
+            overlap[incident_id] = overlap.get(incident_id, 0) + shared
+
+    if not overlap:
+        return None
+
+    # Prefer the incident with the largest event overlap.
+    # Use the smaller ID as a deterministic tie-breaker.
+    return max(overlap, key=lambda i: (overlap[i], -i))
 
 
-def save_new_incidents(conn: sqlite3.Connection, incidents: Iterable[Mapping[str, Any]]) -> int:
-    """Insert only incidents not stored yet; returns how many were inserted.
+def _update_existing_incident(conn, incident_id, incident):
+    """Extend an existing incident without resetting its triage status."""
+    stored = conn.execute(
+        """
+        SELECT severity, title, summary,
+               first_seen_utc, last_seen_utc
+        FROM incidents
+        WHERE incident_id = ?
+        """,
+        (incident_id,),
+    ).fetchone()
 
-    An incident counts as already stored when an incident of the same rule,
-    saved by an earlier run, references one of its events. Re-running
-    ``detect`` on the same database therefore creates nothing new and keeps
-    the status / analyst already set on existing incidents.
+    if stored is None:
+        raise ValueError(f"Incident {incident_id} not found")
+
+    current_rank = _SEVERITY_RANK[stored["severity"]]
+    incoming_rank = _SEVERITY_RANK[incident["severity"]]
+
+    # Keep the more serious assessment.
+    if incoming_rank >= current_rank:
+        severity = incident["severity"]
+        title = incident["title"]
+        summary = incident.get("summary") or stored["summary"]
+    else:
+        severity = stored["severity"]
+        title = stored["title"]
+        summary = stored["summary"]
+
+    first_seen = min(
+        stored["first_seen_utc"],
+        incident["first_seen_utc"],
+    )
+    last_seen = max(
+        stored["last_seen_utc"],
+        incident["last_seen_utc"],
+    )
+
+    event_ids = list(dict.fromkeys(
+        int(x) for x in incident["event_ids"]
+    ))
+
+    with conn:
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO incident_events
+                (incident_id, event_id)
+            VALUES (?, ?)
+            """,
+            [(incident_id, event_id) for event_id in event_ids],
+        )
+
+        conn.execute(
+            """
+            UPDATE incidents
+            SET severity = ?,
+                title = ?,
+                summary = ?,
+                first_seen_utc = ?,
+                last_seen_utc = ?
+            WHERE incident_id = ?
+            """,
+            (
+                severity,
+                title,
+                summary,
+                first_seen,
+                last_seen,
+                incident_id,
+            ),
+        )
+
+
+def save_new_incidents(conn, incidents):
+    """Save new incidents and extend previously stored incidents.
+
+    Returns the number of newly created incidents.
+    Updating an existing incident does not increase this count.
     """
-    new = [inc for inc in incidents
-           if not _already_stored(conn, inc["rule_id"], inc["event_ids"])]
-    for incident in new:
-        insert_incident(conn, incident)
-    return len(new)
+    # Resolve existing matches before inserting anything.
+    # This preserves the case where two genuinely new incidents
+    # share an event within the same detection batch.
+    planned = [
+        (
+            incident,
+            _find_existing_incident_id(
+                conn,
+                incident["rule_id"],
+                incident["event_ids"],
+            ),
+        )
+        for incident in incidents
+    ]
+
+    inserted = 0
+
+    for incident, existing_id in planned:
+        if existing_id is None:
+            insert_incident(conn, incident)
+            inserted += 1
+        else:
+            _update_existing_incident(conn, existing_id, incident)
+
+    return inserted
 
 
 def _rows(cursor: sqlite3.Cursor) -> list[dict[str, Any]]:

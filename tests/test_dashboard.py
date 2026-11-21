@@ -205,3 +205,85 @@ def test_page_filters_the_log_search(db_path, monkeypatch):
     assert any(caption.value.startswith("17 sự kiện khớp") for caption in page.caption)
     page.multiselect(key="search_severity").select("info").run()
     assert any(caption.value.startswith("1 sự kiện khớp") for caption in page.caption)   # the successful login
+
+def test_duplicate_upload_does_not_duplicate_events(db):
+    content = HOLDOUT_LOG.read_bytes()
+
+    first = data.analyze_log(
+        db, "auth_log", content, year=2026, tz="+07:00"
+    )
+
+    after_first = counts(db)
+
+    second = data.analyze_log(
+        db, "auth_log", content, year=2026, tz="+07:00"
+    )
+
+    assert first["duplicate"] is False
+    assert second["duplicate"] is True
+    assert second["stored"] == 0
+    assert second["new_incident_ids"] == []
+    assert counts(db) == after_first
+
+
+def test_duplicate_upload_survives_new_connection(tmp_path):
+    content = HOLDOUT_LOG.read_bytes()
+    path = tmp_path / "upload_test.db"
+
+    with closing(connect(path)) as conn:
+        init_db(conn)
+
+        first = data.analyze_log(
+            conn, "auth_log", content,
+            year=2026, tz="+07:00"
+        )
+
+        first_count = counts(conn)
+
+    # Open another database connection, simulating a new session.
+    with closing(connect(path)) as conn:
+        init_db(conn)
+
+        second = data.analyze_log(
+            conn, "auth_log", content,
+            year=2026, tz="+07:00"
+        )
+
+        assert first["duplicate"] is False
+        assert second["duplicate"] is True
+        assert counts(conn) == first_count
+
+def test_timeline_date_filter():
+    from datetime import date
+
+    incidents = [
+        {
+            "incident_id": 1,
+            "first_seen_utc": "2026-11-12T10:00:00Z",
+            "last_seen_utc": "2026-11-20T11:00:00Z",
+        },
+        {
+            "incident_id": 2,
+            "first_seen_utc": "2026-11-20T12:00:00Z",
+            "last_seen_utc": "2026-11-20T13:00:00Z",
+        },
+        {
+            "incident_id": 3,
+            "first_seen_utc": "2026-11-11T08:00:00Z",
+            "last_seen_utc": "2026-11-11T09:00:00Z",
+        },
+    ]
+
+    def ids(day):
+        return [
+            item["incident_id"]
+            for item in data.incidents_on_day(
+                incidents, day
+            )
+        ]
+
+    assert ids(date(2026, 11, 11)) == [3]
+    assert ids(date(2026, 11, 12)) == [1]
+    assert ids(date(2026, 11, 18)) == [1]
+    assert ids(date(2026, 11, 20)) == [1, 2]
+    assert ids(date(2026, 11, 10)) == []

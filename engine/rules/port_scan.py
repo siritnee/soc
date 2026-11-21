@@ -59,7 +59,11 @@ class PortScanRule(Rule):
         src_ip, dst_ip, port = event.get("src_ip"), event.get("dst_ip"), event.get("dst_port")
         if event.get("action") not in self.actions or not src_ip or not dst_ip or port is None:
             return []
-        if self.internal_only and not (is_internal(src_ip) and is_internal(dst_ip)):
+        # The target must belong to our internal network.
+        if not is_internal(dst_ip):
+            return []
+        # Optional stricter mode: the scanner must also be internal.
+        if self.internal_only and not is_internal(src_ip):
             return []
         target = self._targets.get((src_ip, dst_ip))
         if target is None:

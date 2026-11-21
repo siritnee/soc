@@ -452,3 +452,82 @@ def test_summary_of_a_stored_incident(tmp_path):
     timeline = text.split("## Timeline\n")[1].split("\n\n")[0].splitlines()
     assert len(timeline) == 21                       # 10 first + "... more ..." + 10 last
     assert timeline[-1].endswith("ssh_success 192.0.2.10 -> 10.0.0.5 user=root")
+
+def test_existing_incident_receives_new_events(tmp_path):
+    """An existing port-scan incident must grow when more logs arrive."""
+    raw = Log().scan(range(1000, 1017)).events
+
+    # Use internal addresses so the test remains valid
+    # when internal-only scan detection is enabled later.
+    for event in raw:
+        event["src_ip"] = "10.0.0.9"
+
+    def without_id(events):
+        return [
+            {key: value for key, value in event.items() if key != "id"}
+            for event in events
+        ]
+
+    with connect(tmp_path / "incremental.db") as db:
+        init_db(db)
+
+        # First ingestion: 15 scanned ports.
+        insert_events(db, without_id(raw[:15]))
+
+        first = detect_incidents(list_events(db))
+        assert save_new_incidents(db, first) == 1
+
+        incident_id = db.execute(
+            "SELECT incident_id FROM incidents"
+        ).fetchone()[0]
+
+        set_incident_status(
+            db, incident_id, "In Progress", "analyst01"
+        )
+
+        # Second ingestion: two more scanned ports.
+        insert_events(db, without_id(raw[15:]))
+
+        updated = detect_incidents(list_events(db))
+        assert save_new_incidents(db, updated) == 0
+
+        # No duplicate incident, but all 17 events are linked.
+        assert counts(db) == (17, 1)
+
+        incident, related_events = load_incident(db, incident_id)
+
+        assert len(related_events) == 17
+        assert incident["status"] == "In Progress"
+        assert incident["assigned_analyst"] == "analyst01"
+        assert incident["last_seen_utc"] == format_ts(
+            T0 + timedelta(seconds=16)
+        )
+
+        # A third detection must remain idempotent.
+        assert save_new_incidents(
+            db, detect_incidents(list_events(db))
+        ) == 0
+        assert counts(db) == (17, 1)
+
+def test_default_scan_ignores_external_target():
+    log = Log().scan(range(1, 16))
+
+    for event in log.events:
+        event["src_ip"] = "10.0.2.99"
+        event["dst_ip"] = "203.0.113.50"
+
+    assert scan(log.events) == []
+
+
+def test_default_scan_detects_external_attacker_to_internal_target():
+    log = Log().scan(range(1, 16))
+
+    for event in log.events:
+        event["src_ip"] = "203.0.113.50"
+        event["dst_ip"] = "10.0.1.10"
+
+    incidents = scan(log.events)
+
+    assert len(incidents) == 1
+    assert incidents[0].rule_id == "INTERNAL_PORT_SCAN"
+    assert len(incidents[0].event_ids) == 15
