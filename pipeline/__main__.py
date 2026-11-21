@@ -12,7 +12,7 @@ from typing import Iterator
 from normalizer.schema import normalize_event
 from storage.models import connect, init_db, insert_events, list_events, counts
 from engine.incident import save_new_incidents
-
+from contextlib import closing
 
 def read_normalized_jsonl(path: Path) -> Iterator[dict]:
     with path.open(encoding="utf-8") as fh:
@@ -42,7 +42,7 @@ def load_source(source: str, path: Path):
 
 
 def do_ingest(db_path: str, source: str, file_path: str) -> int:
-    with connect(db_path) as conn:
+    with closing(connect(db_path)) as conn, conn:
         init_db(conn)
         return insert_events(conn, load_source(source, Path(file_path)))
 
@@ -50,7 +50,7 @@ def do_ingest(db_path: str, source: str, file_path: str) -> int:
 def do_detect(db_path: str) -> int:
     from engine.correlation import detect_incidents
 
-    with connect(db_path) as conn:
+    with closing(connect(db_path)) as conn, conn:
         init_db(conn)
 
         events = list_events(conn)
@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "init-db":
-            with connect(args.db) as conn:
+            with closing(connect(args.db)) as conn, conn:
                 init_db(conn)
             print(f"Created DB: {args.db}")
         elif args.command == "ingest":
@@ -90,16 +90,80 @@ def main(argv: list[str] | None = None) -> int:
             env = {**os.environ, "SOC_DB_PATH":args.db}
             return subprocess.run([sys.executable, "-m", "streamlit", "run", str(ui_file)],env=env,check=False).returncode
         elif args.command == "replay":
-            # Isolated temporary DB avoids contaminating the regular SOC database.
+            dataset_path = Path(args.dataset)
+
+            if not dataset_path.exists():
+                raise ValueError(
+                    f"Dataset not found: {dataset_path}"
+                )
+
+            # Replay runs in an isolated temporary database.
+            # It never modifies the normal dashboard database.
             with tempfile.TemporaryDirectory() as temp:
                 replay_db = str(Path(temp) / "replay.sqlite3")
-                count = do_ingest(replay_db, "normalized", args.dataset)
-                print(f"Replayed {count} normalized event(s)")
+
+                if dataset_path.is_dir():
+                    # Replay a raw multi-source dataset directory
+                    # containing manifest.json and source log files.
+                    from eval.dataset import ingest_dataset
+
+                    with closing(connect(replay_db)) as conn, conn:
+                        init_db(conn)
+
+                        source_stats = ingest_dataset(
+                            conn, dataset_path
+                        )
+
+                    total_ingested = 0
+
+                    print(
+                        f"Replaying dataset: {dataset_path}"
+                    )
+
+                    for source, stats in source_stats.items():
+                        stored = stats["stored"]
+                        total_ingested += stored
+
+                        print(
+                            f"  {source}: "
+                            f"{stored} event(s) stored"
+                        )
+
+                    print(
+                        f"Replayed {total_ingested} "
+                        f"event(s) from dataset directory"
+                    )
+
+                elif dataset_path.is_file():
+                    # Keep backward compatibility with
+                    # normalized JSONL replay.
+                    count = do_ingest(
+                        replay_db,
+                        "normalized",
+                        str(dataset_path),
+                    )
+
+                    print(
+                        f"Replayed {count} "
+                        f"normalized event(s)"
+                    )
+
+                # Run the real correlation engine.
                 new_incidents = do_detect(replay_db)
-                with connect(replay_db) as conn:
+
+                with closing(connect(replay_db)) as conn, conn:
                     events, incidents = counts(conn)
-                print(f"events={events}, incidents={incidents}, newly_created={new_incidents}")
-                print("Note: evaluate precision/recall against ground truth in eval/ (member 5)")
+
+                print(
+                    f"events={events}, "
+                    f"incidents={incidents}, "
+                    f"newly_created={new_incidents}"
+                )
+
+                print(
+                    "For precision, recall and latency, "
+                    "run python -m eval.run"
+                )
     except (ValueError, OSError, RuntimeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

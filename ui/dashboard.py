@@ -48,27 +48,94 @@ def short(text: str | None) -> str:
     return text[:19].replace("T", " ") if text else "-"
 
 
-def timeline_spec() -> dict:
-    """Vega-Lite: one row per rule, a bar from first to last event, a dot where it starts."""
-    colour = {"field": "severity", "type": "nominal", "title": "Mức độ",
-              "scale": {"domain": list(SEVERITY_COLOURS), "range": list(SEVERITY_COLOURS.values())}}
-    tooltip = [{"field": "incident", "title": "Incident"}, {"field": "severity", "title": "Mức độ"},
-               {"field": "status", "title": "Trạng thái"}, {"field": "start", "type": "temporal", "title": "Bắt đầu (UTC)",
-                                                           "timeUnit": "utcyearmonthdatehoursminutesseconds"},
-               {"field": "events", "title": "Số sự kiện"}]
-    x = {"field": "start", "type": "temporal", "title": "Thời gian (UTC)", "scale": {"type": "utc"},
-         "axis": {"format": "%H:%M", "grid": True}}
-    y = {"field": "rule", "type": "nominal", "title": None, "axis": {"labelLimit": 240}}
+
+def timeline_spec(*, one_day: bool = False) -> dict:
+    """Timeline with one row per incident."""
+    colour = {
+        "field": "severity",
+        "type": "nominal",
+        "title": "Mức độ",
+        "scale": {
+            "domain": list(SEVERITY_COLOURS),
+            "range": list(SEVERITY_COLOURS.values()),
+        },
+    }
+
+    tooltip = [
+        {"field": "incident", "title": "Incident"},
+        {"field": "rule", "title": "Luật"},
+        {"field": "severity", "title": "Mức độ"},
+        {"field": "status", "title": "Trạng thái"},
+        {
+            "field": "start",
+            "type": "temporal",
+            "title": "Bắt đầu (UTC)",
+        },
+        {
+            "field": "end",
+            "type": "temporal",
+            "title": "Kết thúc (UTC)",
+        },
+        {"field": "events", "title": "Số sự kiện"},
+    ]
+
+    x = {
+        "field": "start",
+        "type": "temporal",
+        "title": "Thời gian (UTC)",
+        "scale": {"type": "utc"},
+        "axis": {
+            "format": (
+                "%H:%M:%S" if one_day
+                else "%d/%m %H:%M"
+            ),
+            "grid": True,
+            "labelAngle": -35,
+        },
+    }
+
+    y = {
+        "field": "incident",
+        "type": "nominal",
+        "title": None,
+        "sort": None,
+        "axis": {"labelLimit": 300},
+    }
+
     return {
         "height": {"step": 34},
         "layer": [
-            {"mark": {"type": "bar", "height": 8, "cornerRadius": 4},
-             "encoding": {"x": x, "x2": {"field": "end"}, "y": y, "color": colour, "tooltip": tooltip}},
-            {"mark": {"type": "point", "filled": True, "size": 110, "stroke": "#fcfcfb", "strokeWidth": 2},
-             "encoding": {"x": x, "y": y, "color": colour, "tooltip": tooltip}},
+            {
+                "mark": {
+                    "type": "bar",
+                    "height": 8,
+                    "cornerRadius": 4,
+                },
+                "encoding": {
+                    "x": x,
+                    "x2": {"field": "end"},
+                    "y": y,
+                    "color": colour,
+                    "tooltip": tooltip,
+                },
+            },
+            {
+                "mark": {
+                    "type": "point",
+                    "filled": True,
+                    "size": 110,
+                    "stroke": "#fcfcfb",
+                    "strokeWidth": 2,
+                },
+                "encoding": {
+                    "x": x,
+                    "y": y,
+                    "color": colour,
+                    "tooltip": tooltip,
+                },
+            },
         ],
     }
-
 
 def assets_spec() -> dict:
     """Vega-Lite: horizontal bars, one series, value written at the bar end."""
@@ -99,20 +166,101 @@ def show_overview(conn) -> None:
         return
     st.caption(f"Dữ liệu từ {short(numbers['first_event_utc'])} đến {short(numbers['last_event_utc'])} (UTC). "
                + " · ".join(f"{SOURCE_NAMES.get(source, source)}: {count:,}" for source, count in numbers["by_source"].items()))
-
     st.subheader("Timeline incident")
+
     incidents = data.list_incidents(conn)
+
     if incidents:
-        rows = [{"incident": f"#{item['incident_id']} {item['title']}", "rule": item["rule_id"],
-                 "severity": item["severity"], "status": item["status"], "events": item["event_count"],
-                 "start": item["first_seen_utc"], "end": item["last_seen_utc"]} for item in incidents]
-        st.vega_lite_chart(rows, timeline_spec(), **WIDE)
-        with st.expander("Xem dạng bảng"):
-            st.dataframe([{"Incident": row["incident"], "Mức độ": row["severity"], "Trạng thái": row["status"],
-                           "Bắt đầu (UTC)": short(row["start"]), "Kết thúc (UTC)": short(row["end"]),
-                           "Số sự kiện": row["events"]} for row in rows], **WIDE, hide_index=True)
+        first_day = min(
+            parse_utc(item["first_seen_utc"]).date()
+            for item in incidents
+        )
+
+        last_day = max(
+            parse_utc(item["last_seen_utc"]).date()
+            for item in incidents
+        )
+
+        show_all = st.checkbox(
+            "Hiển thị tất cả ngày",
+            value=False,
+            key="timeline_all_days",
+        )
+
+        selected_day = st.date_input(
+            "Chọn ngày (UTC)",
+            value=last_day,
+            min_value=first_day,
+            max_value=last_day,
+            disabled=show_all,
+            key="timeline_selected_day",
+        )
+
+        visible = (
+            incidents if show_all
+            else data.incidents_on_day(
+                incidents, selected_day
+            )
+        )
+
+        st.caption(
+            f"Đang hiển thị {len(visible)}/"
+            f"{len(incidents)} incident"
+        )
+
+        if visible:
+            rows = [
+                {
+                    "incident": (
+                        f"#{item['incident_id']} "
+                        f"{item['title']}"
+                    ),
+                    "rule": item["rule_id"],
+                    "severity": item["severity"],
+                    "status": item["status"],
+                    "events": item["event_count"],
+                    "start": item["first_seen_utc"],
+                    "end": item["last_seen_utc"],
+                }
+                for item in visible
+            ]
+
+            st.vega_lite_chart(
+                rows,
+                timeline_spec(one_day=not show_all),
+                **WIDE,
+            )
+
+            with st.expander("Xem dạng bảng"):
+                st.dataframe(
+                    [
+                        {
+                            "Incident": row["incident"],
+                            "Mức độ": row["severity"],
+                            "Trạng thái": row["status"],
+                            "Bắt đầu (UTC)": short(
+                                row["start"]
+                            ),
+                            "Kết thúc (UTC)": short(
+                                row["end"]
+                            ),
+                            "Số sự kiện": row["events"],
+                        }
+                        for row in rows
+                    ],
+                    **WIDE,
+                    hide_index=True,
+                )
+        else:
+            st.info(
+                "Không có incident nào trong ngày đã chọn."
+            )
     else:
-        st.info("Chưa có incident. Chạy `python -m pipeline detect` sau khi nạp log.")
+        st.info(
+            "Chưa có incident. Chạy "
+            "`python -m pipeline detect` "
+            "sau khi nạp log."
+        )
 
     st.subheader("Thiết bị bị tấn công nhiều nhất")
     assets = data.top_assets(conn, limit=8)
@@ -214,7 +362,6 @@ def show_upload(conn) -> None:
         year = year_column.number_input("Năm của log (chỉ dùng cho auth.log)", min_value=2000, max_value=2100,
                                         value=datetime.now().year, step=1, key="upload_year")
         zone = zone_column.text_input("Múi giờ của log (chỉ dùng cho auth.log)", "+07:00", key="upload_tz")
-        again = st.checkbox("Nạp lại dù file này đã được nạp trong phiên này", key="upload_again")
         submitted = st.form_submit_button("Phân tích")
     if not submitted:
         return
@@ -222,17 +369,21 @@ def show_upload(conn) -> None:
         st.warning("Hãy chọn một file trước.")
         return
     content = uploaded.getvalue()
-    digest = data.file_digest(source, content)
-    seen = st.session_state.setdefault("uploaded_digests", set())
-    if digest in seen and not again:
-        st.warning("File này đã được nạp trong phiên này. Nạp lần nữa sẽ nhân đôi sự kiện; "
-                   "tích vào ô ở trên nếu bạn vẫn muốn.")
-        return
     try:
-        result = data.analyze_log(conn, source, content, year=int(year), tz=zone)
+        result = data.analyze_log(
+            conn, source, content, year=int(year), tz=zone
+        )
     except ValueError as exc:
         st.error(f"Không phân tích được: {exc}")
         return
+
+    if result.get("duplicate"):
+        st.warning(
+            "File này đã được phân tích và lưu trong database. "
+            "Hệ thống không nhập lại để tránh trùng sự kiện."
+        )
+        return
+
     seen.add(digest)
     stats = result["stats"]
     one, two, three, four = st.columns(4)
