@@ -52,8 +52,10 @@ Luật phía Windows khai báo trong `RULES` của `engine/rules/windows.py`; en
 - `detect_incidents(events)` trả dict theo contract, thêm `detected_at_utc` (lúc luật báo lần đầu), `dedup_key`,
   `mitre`, `raw_alert_count`.
 - `detect_with_stats(events)` trả thêm `raw_alerts`, `incidents`, `dedup_savings = 1 - incidents/raw_alerts`, `by_rule`.
-- `save_new_incidents(conn, incidents)`: bỏ qua incident cùng luật đã lưu mà có chung sự kiện; chạy lại không tạo trùng,
-  không ghi đè trạng thái. Hạn chế: incident đã lưu không được bổ sung sự kiện mới.
+- `save_new_incidents(conn, incidents)`: nếu incident mới cùng luật chia sẻ bằng chứng với incident đã lưu,
+  liên kết thêm các event mới, cập nhật mốc thời gian và severity mà không đổi trạng thái hoặc analyst.
+  Nếu chưa có incident tương ứng thì tạo mới; chạy `detect` lại trên cùng dữ liệu không nhân đôi incident.
+  Các thao tác ghi được thực hiện bằng savepoint để có thể rollback cùng giao dịch nhập file từ Dashboard.
 - `export_summary_from_db(conn, incident_id)`: tóm tắt điều tra dạng Markdown (luật, MITRE, thời gian, IP/user/host,
   số sự kiện theo loại, timeline đầu và cuối, gợi ý bước tiếp theo).
 

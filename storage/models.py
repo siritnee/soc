@@ -1,9 +1,11 @@
 """SQLite models and shared storage API. Python standard library only."""
 from __future__ import annotations
 import json
+import hashlib
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable, Mapping, Any
+from typing import Iterable, Mapping, Any, Callable
 from normalizer.schema import normalize_event
 
 DDL = """
@@ -75,6 +77,82 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+@contextmanager
+def transaction(conn: sqlite3.Connection):
+    """Atomic unit of work, including when called inside another transaction.
+
+    SQLite connection context managers COMMIT on leaving even when nested;
+    use a savepoint so a caller's transaction cannot be committed early.
+    """
+    if conn.in_transaction:
+        conn.execute("SAVEPOINT soc_nested_write")
+        try:
+            yield
+        except BaseException:
+            conn.execute("ROLLBACK TO SAVEPOINT soc_nested_write")
+            conn.execute("RELEASE SAVEPOINT soc_nested_write")
+            raise
+        else:
+            conn.execute("RELEASE SAVEPOINT soc_nested_write")
+    else:
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            yield
+        except BaseException:
+            conn.rollback()
+            raise
+        else:
+            conn.commit()
+
+
+def _digest_prefix(source: str, *, year: int | None = None,
+                   tz: str | None = None) -> bytes:
+    options = {
+        "source": source,
+        "year": year if source == "auth_log" else None,
+        "tz": tz if source == "auth_log" else None,
+    }
+    return json.dumps(options, sort_keys=True).encode("utf-8") + b"\0"
+
+
+def file_digest(source: str, data: bytes, *, year: int | None = None,
+                tz: str | None = None) -> str:
+    """Same content+parser-options fingerprint for CLI and dashboard uploads."""
+    return hashlib.sha256(_digest_prefix(source, year=year, tz=tz) + data).hexdigest()
+
+
+def file_digest_path(source: str, path: str | Path, *, year: int | None = None,
+                     tz: str | None = None) -> str:
+    """Stream file hash; do not read a large log completely into memory."""
+    digest = hashlib.sha256(_digest_prefix(source, year=year, tz=tz))
+    with Path(path).open("rb") as fh:
+        for block in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def ingest_file(conn: sqlite3.Connection, source: str, digest: str,
+                records_factory: Callable[[], Iterable[Mapping[str, Any]]],
+                after_insert: Callable[[], None] | None = None) -> tuple[int, bool]:
+    """Exactly-once per file and parsing configuration, atomically.
+
+    The events, optional incident update and fingerprint are ALL committed
+    together. On any failure all changes roll back. Returns (stored, duplicate).
+    The factory is not called at all for a duplicate file.
+    """
+    with transaction(conn):
+        if conn.execute("SELECT 1 FROM ingested_files WHERE digest=?", (digest,)).fetchone():
+            return 0, True
+        stored = insert_events(conn, records_factory())
+        if after_insert is not None:
+            after_insert()
+        conn.execute(
+            "INSERT INTO ingested_files(digest, source, stored_events) VALUES (?, ?, ?)",
+            (digest, source, stored),
+        )
+        return stored, False
+
+
 def insert_events(conn: sqlite3.Connection,
                   records: Iterable[Mapping[str, Any]], batch_size: int = 500) -> int:
     """Validate and persist events with executemany; returns inserted row count."""
@@ -90,7 +168,7 @@ def insert_events(conn: sqlite3.Connection,
         n = len(buffer)
         buffer.clear()
         return n
-    with conn:
+    with transaction(conn):
         for raw in records:
             record = normalize_event(raw)
             buffer.append(tuple(
@@ -123,7 +201,7 @@ def insert_incident(conn: sqlite3.Connection, record: Mapping[str, Any]) -> int:
     for key in allowed:
         if not record.get(key):
             raise ValueError(f"Missing incident field: {key}")
-    with conn:
+    with transaction(conn):
         cur = conn.execute(
             """INSERT INTO incidents
                (rule_id,title,severity,status,assigned_analyst,first_seen_utc,last_seen_utc,summary)

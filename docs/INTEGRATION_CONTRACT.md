@@ -58,7 +58,11 @@ python -m pipeline --db data/soc.db detect
 python -m pipeline --db data/soc.db dashboard
 python -m pipeline replay --dataset data/examples/normalized.jsonl
 ```
-`detect` và `replay` sẽ thông báo **engine chưa tích hợp** cho tới khi Thành viên 4 merge code thật.
+`detect` sử dụng Correlation Engine đã tích hợp. `replay` hỗ trợ cả file JSONL chuẩn hóa
+và thư mục `data/benchmark` có `manifest.json`, chạy trong SQLite tạm mà không ghi
+vào database chính. CLI `ingest` và Dashboard cùng dùng fingerprint file trong
+`storage/models.py` để tránh nhập lại cùng file; với lỗi giữa chừng, transaction
+rollback toàn bộ event/incident/fingerprint.
 
 ## 6. Git / PR
 - Mỗi người tạo branch `feature/*` hoặc `fix/*`.
