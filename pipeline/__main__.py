@@ -10,7 +10,9 @@ import tempfile
 from pathlib import Path
 from typing import Iterator
 from normalizer.schema import normalize_event
-from storage.models import connect, init_db, insert_events, list_events, counts
+from storage.models import (
+    connect, init_db, ingest_file, file_digest_path, list_events, counts,
+)
 from engine.incident import save_new_incidents
 from contextlib import closing
 
@@ -42,9 +44,19 @@ def load_source(source: str, path: Path):
 
 
 def do_ingest(db_path: str, source: str, file_path: str) -> int:
-    with closing(connect(db_path)) as conn, conn:
+    path = Path(file_path)
+    # The auth.log parser uses these environment settings by default.
+    # Include them in the fingerprint to avoid treating different parses
+    # of the same bytes as duplicates.
+    year = int(os.environ["SOC_AUTH_LOG_YEAR"]) if (source == "auth_log" and os.environ.get("SOC_AUTH_LOG_YEAR")) else None
+    tz = (os.environ.get("SOC_AUTH_LOG_TZ") or "+07:00") if source == "auth_log" else None
+    digest = file_digest_path(source, path, year=year, tz=tz)
+    with closing(connect(db_path)) as conn:
         init_db(conn)
-        return insert_events(conn, load_source(source, Path(file_path)))
+        stored, duplicate = ingest_file(
+            conn, source, digest, lambda: load_source(source, path),
+        )
+        return stored
 
 
 def do_detect(db_path: str) -> int:

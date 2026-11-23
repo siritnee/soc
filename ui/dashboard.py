@@ -384,7 +384,6 @@ def show_upload(conn) -> None:
         )
         return
 
-    seen.add(digest)
     stats = result["stats"]
     one, two, three, four = st.columns(4)
     one.metric("Dòng đọc", stats["lines"])

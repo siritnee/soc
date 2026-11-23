@@ -5,7 +5,6 @@ All functions take an open SQLite connection (``storage.models.connect``).
 """
 from __future__ import annotations
 
-import hashlib
 import os
 import sqlite3
 import tempfile
@@ -16,7 +15,7 @@ from engine.correlation import detect_incidents, mitre_for_rule
 from engine.incident import export_summary_from_db, load_incident, save_new_incidents
 from engine.net import is_internal
 from eval.dataset import parse_source
-from storage.models import insert_events, list_events, set_incident_status
+from storage.models import (file_digest as shared_file_digest, ingest_file, list_events, set_incident_status)
 from datetime import date
 
 STATUSES = ("New", "In Progress", "Closed")
@@ -202,22 +201,8 @@ def file_digest(
     year: int | None = None,
     tz: str | None = None,
 ) -> str:
-    """Fingerprint a file together with its parsing configuration."""
-    options = {
-        "source": source,
-        "year": year if source == "auth_log" else None,
-        "tz": tz if source == "auth_log" else None,
-    }
-
-    import json
-
-    metadata = json.dumps(
-        options, sort_keys=True
-    ).encode("utf-8")
-
-    return hashlib.sha256(
-        metadata + b"\0" + data
-    ).hexdigest()
+    """Compatibility wrapper for the shared CLI/Dashboard digest."""
+    return shared_file_digest(source, data, year=year, tz=tz)
 
 
 def analyze_log(conn: sqlite3.Connection, source: str, data: bytes, *, year: int | None = None,
@@ -228,75 +213,34 @@ def analyze_log(conn: sqlite3.Connection, source: str, data: bytes, *, year: int
     the incidents that are new.
     """
 
+    # Check both APIs against the same persistent SQLite fingerprint.
+    # The actual duplicate check is repeated under the write transaction
+    # so concurrent sessions cannot both admit the same file.
     digest = file_digest(source, data, year=year, tz=tz)
+    before = {row[0] for row in conn.execute("SELECT incident_id FROM incidents")}
+    stats: dict[str, Any] = {}
 
-    already_imported = conn.execute(
-        "SELECT 1 FROM ingested_files WHERE digest = ?",
-        (digest,),
-    ).fetchone()
+    def records():
+        handle, name = tempfile.mkstemp(suffix=".log")
+        try:
+            with os.fdopen(handle, "wb") as temp:
+                temp.write(data)
+            yield from parse_source(source, Path(name), stats, year=year, tz=tz)
+        finally:
+            os.unlink(name)
 
-    if already_imported:
-        return {
-            "stats": {},
-            "stored": 0,
-            "new_incident_ids": [],
-            "duplicate": True,
-        }
+    def update_incidents() -> None:
+        save_new_incidents(conn, detect_incidents(list_events(conn)))
 
-    before = {
-        row[0]
-        for row in conn.execute(
-            "SELECT incident_id FROM incidents"
-        )
-    }
-
-    handle, name = tempfile.mkstemp(suffix=".log")
-
-    try:
-        with os.fdopen(handle, "wb") as temp:
-            temp.write(data)
-
-        stats = {}
-
-        stored = insert_events(
-            conn,
-            parse_source(
-                source,
-                Path(name),
-                stats,
-                year=year,
-                tz=tz,
-            ),
-        )
-
-    finally:
-        os.unlink(name)
-
-    save_new_incidents(
-        conn,
-        detect_incidents(list_events(conn)),
+    stored, duplicate = ingest_file(
+        conn, source, digest, records, after_insert=update_incidents,
     )
+    if duplicate:
+        return {"stats": {}, "stored": 0, "new_incident_ids": [], "duplicate": True}
 
-    after = [
-        row[0]
-        for row in conn.execute(
-            """
-            SELECT incident_id
-            FROM incidents
-            ORDER BY incident_id
-            """
-        )
-    ]
-
-    with conn:
-        conn.execute(
-            """
-            INSERT INTO ingested_files
-                (digest, source, stored_events)
-            VALUES (?, ?, ?)
-            """,
-            (digest, source, stored),
-        )
+    after = [row[0] for row in conn.execute(
+        "SELECT incident_id FROM incidents ORDER BY incident_id"
+    )]
 
     return {
         "stats": stats,

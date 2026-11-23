@@ -6,7 +6,7 @@ from collections import Counter
 from typing import Any, Iterable, Mapping, Sequence
 
 from engine.correlation import rule_by_id
-from storage.models import insert_incident
+from storage.models import insert_incident, transaction
 
 _CHUNK = 500  # stay well below SQLite's bound-parameter limit
 
@@ -99,7 +99,7 @@ def _update_existing_incident(conn, incident_id, incident):
         int(x) for x in incident["event_ids"]
     ))
 
-    with conn:
+    with transaction(conn):
         conn.executemany(
             """
             INSERT OR IGNORE INTO incident_events

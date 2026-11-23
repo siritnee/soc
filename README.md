@@ -109,6 +109,11 @@ $env:SOC_AUTH_LOG_TZ = "+07:00"
 .\.venv\Scripts\python.exe -m pipeline --db data/demo.db ingest --source auth_log --file data/benchmark/auth.log
 ```
 
+Re-running the same `ingest --source ... --file ...` command with the
+same input bytes and parsing configuration returns **0 new events** instead
+of duplicating the log. The first import is recorded in the `ingested_files`
+SQLite table.
+
 ### 5.4 Ingest Suricata EVE JSON
 
 ```powershell
@@ -271,13 +276,20 @@ The CLI also supports replay of normalized JSONL events:
 .\.venv\Scripts\python.exe -m pipeline replay --dataset data/examples/normalized.jsonl
 ```
 
-Replay creates a temporary isolated SQLite database,
-ingests normalized events, runs detection, and prints counts.
+Replay creates a temporary isolated SQLite database, ingests events,
+runs correlation and prints the event/incident totals.
 
-Replay does not use the three raw benchmark log files
-directly and does not modify the regular Dashboard database.
+Replay supports **both** normalized JSONL files and a **three-source benchmark
+directory** with `manifest.json` (Suricata, Sysmon and Linux auth.log):
 
-Use `eval.run` for complete three-source benchmark evaluation.
+```powershell
+.\.venv\Scripts\python.exe -m pipeline replay --dataset data/benchmark
+```
+
+Expected output for the supplied benchmark: `events=1138, incidents=9`.
+Replay never modifies the regular Dashboard database.
+
+Use `eval.run` for full precision, recall, alert reduction and latency metrics.
 
 ## 11. Automated Testing
 
@@ -287,11 +299,18 @@ Run all tests:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Verified local result on November 20, 2026:
+Verified in the patched repository (November 21, 2026):
 
 ```text
-289 passed
+303 passed, 4 skipped
 ```
+
+The four skipped tests use `streamlit.testing.v1`, which is unavailable
+in the verification environment. Run the tests on a machine with
+Streamlit installed to check those UI tests as well.
+
+Additional regression tests in `tests/test_ingest_atomicity.py` cover
+CLI re-imports, shared CLI/Dashboard fingerprints, and transaction rollback.
 
 Run only the end-to-end integration test:
 
@@ -321,9 +340,17 @@ The end-to-end test validates:
 - The benchmark uses synthetic security logs.
 - Some legitimate behavior may trigger false positives.
 - Recall is reported for attacks covered by implemented rules.
-- Uploading the same raw file repeatedly may duplicate events.
-- Replay supports normalized JSONL rather than the raw
-  three-source benchmark directory.
+- CLI ingest and Dashboard upload use a shared SQLite `ingested_files` fingerprint
+  to avoid re-importing identical bytes from the same source with the same
+  parsing options. The upload transaction saves events, incidents and the
+  fingerprint together, rolling back all changes on error.
+- The fingerprint is **file-level**, not event-level: importing different
+  files with overlapping lines can still create duplicate events. On an
+  existing database populated before this fix, older ingests may not have
+  fingerprints; use a fresh demo database or migrate fingerprints carefully.
+- For reproducible Linux auth.log imports, set `SOC_AUTH_LOG_YEAR` and
+  `SOC_AUTH_LOG_TZ` explicitly before CLI ingest; changing these settings
+  intentionally creates a distinct file fingerprint.
 - Detection and correlation operate offline, not as a
   production real-time SOC monitoring service.
 
